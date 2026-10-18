@@ -1,214 +1,114 @@
-# mall
+# FashionIQ 三路图文商品检索
 
-<p>
-  <a href="#公众号"><img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E5%85%AC%E4%BC%97%E5%8F%B7-macrozheng-blue.svg" alt="公众号"></a>
-  <a href="#公众号"><img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E4%BA%A4%E6%B5%81-%E5%BE%AE%E4%BF%A1%E7%BE%A4-2BA245.svg" alt="交流"></a>
-  <a href="https://github.com/macrozheng/mall-learning"><img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E5%AD%A6%E4%B9%A0%E6%95%99%E7%A8%8B-mall--learning-green.svg" alt="学习教程"></a>
-  <a href="https://github.com/macrozheng/mall-swarm"><img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/Cloud%E7%89%88%E6%9C%AC-mall--swarm-brightgreen.svg" alt="SpringCloud版本"></a>
-  <a href="https://github.com/macrozheng/mall-admin-web"><img src="https://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E5%90%8E%E5%8F%B0%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F-mall--admin--web-green.svg" alt="后台管理系统"></a>
-  <a href="https://github.com/macrozheng/mall-app-web"><img src="https://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E5%89%8D%E5%8F%B0%E5%95%86%E5%9F%8E%E9%A1%B9%E7%9B%AE-mall--app--web-green.svg" alt="前台商城项目"></a>
-  <a href="https://gitee.com/macrozheng/mall"><img src="http://macro-oss.oss-cn-shenzhen.aliyuncs.com/mall/badge/%E7%A0%81%E4%BA%91-%E9%A1%B9%E7%9B%AE%E5%9C%B0%E5%9D%80-orange.svg" alt="码云"></a>
-</p>
+这是一个面向服饰商品的图文检索项目。用户提供一张参考图和一段修改描述，系统从商品图库中检索符合目标的商品。
 
-## 友情提示
+检索使用 OpenAI CLIP ViT-L/14 生成图文向量，使用 Ollama `gemma3:12b` 根据参考图和修改描述生成目标图片描述，再对三路候选去重和加权排序。
 
-> 1. **快速体验项目**：[在线访问地址](https://www.macrozheng.com/admin/index.html) 。
-> 2. **全套学习教程**：[《mall学习教程》](https://www.macrozheng.com) 。
-> 3. **视频教程**：[《mall视频教程》](https://www.macrozheng.com/mall/catalog/mall_video.html) 。
-> 4. **微服务版本**：基于Spring Cloud Alibaba的项目：[mall-swarm](https://github.com/macrozheng/mall-swarm) 。
-> 5. **分支说明**：`master`分支基于Spring Boot 3.5+JDK 17，`dev-v2`分支基于Spring Boot 2.7+JDK 8。
+## 检索流程
 
-## 前言
-
-`mall`项目致力于打造一个完整的电商系统，采用现阶段主流技术实现。
-
-## 项目文档
-
-文档地址：[https://www.macrozheng.com](https://www.macrozheng.com)
-
-## 项目介绍
-
-`mall`项目是一套电商系统，包括前台商城系统及后台管理系统，基于SpringBoot+MyBatis实现，采用Docker容器化部署。前台商城系统包含首页门户、商品推荐、商品搜索、商品展示、购物车、订单流程、会员中心、客户服务、帮助中心等模块。后台管理系统包含商品管理、订单管理、会员管理、促销管理、运营管理、内容管理、统计报表、财务管理、权限管理、设置等模块。
-
-### 项目演示
-
-#### 后台管理系统
-
-前端项目`mall-admin-web`地址：https://github.com/macrozheng/mall-admin-web
-
-项目演示地址： [https://www.macrozheng.com/admin/index.html](https://www.macrozheng.com/admin/index.html)  
-
-![后台管理系统功能演示](./document/resource/mall_admin_show.png)
-
-#### 前台商城系统
-
-前端项目`mall-app-web`地址：https://github.com/macrozheng/mall-app-web
-
-项目演示地址（将浏览器切换为手机模式效果更佳）：[https://www.macrozheng.com/app/](https://www.macrozheng.com/app/)
-
-![前台商城系统功能演示](./document/resource/re_mall_app_show.jpg)
-
-### 组织结构
-
-```
-mall
-├── mall-common -- 工具类及通用代码
-├── mall-mbg -- MyBatisGenerator生成的数据库操作代码
-├── mall-security -- SpringSecurity封装公用模块
-├── mall-admin -- 后台商城管理系统接口
-├── mall-search -- 基于Elasticsearch的商品搜索系统
-├── mall-portal -- 前台商城系统接口
-└── mall-demo -- 框架搭建时的测试代码
+```mermaid
+flowchart LR
+    A[参考图片] --> B[CLIP 图像编码]
+    A --> D[gemma3:12b]
+    C[修改文本] --> E[CLIP 文本编码]
+    C --> D
+    D --> F[目标图片描述]
+    F --> G[CLIP 文本编码]
+    B --> H[参考图检索]
+    E --> I[修改文本检索]
+    G --> J[目标描述检索]
+    H --> K[按商品 ID 去重并融合排序]
+    I --> K
+    J --> K
+    K --> L[返回商品结果]
 ```
 
-### 技术选型
+## 三路召回与排序
 
-#### 后端技术
+三路分别独立计算 CLIP 余弦相似度，各召回前 100 个候选：
 
-| 技术                 | 说明                | 官网                                           |
-| -------------------- | ------------------- | ---------------------------------------------- |
-| SpringBoot           | Web应用开发框架      | https://spring.io/projects/spring-boot         |
-| SpringSecurity       | 认证和授权框架      | https://spring.io/projects/spring-security     |
-| MyBatis              | ORM框架             | http://www.mybatis.org/mybatis-3/zh/index.html |
-| MyBatisGenerator     | 数据层代码生成器     | http://www.mybatis.org/generator/index.html    |
-| Elasticsearch        | 搜索引擎            | https://github.com/elastic/elasticsearch       |
-| RabbitMQ             | 消息队列            | https://www.rabbitmq.com/                      |
-| Redis                | 内存数据存储         | https://redis.io/                              |
-| MongoDB              | NoSql数据库         | https://www.mongodb.com                        |
-| LogStash             | 日志收集工具        | https://github.com/elastic/logstash            |
-| Kibana               | 日志可视化查看工具  | https://github.com/elastic/kibana              |
-| Nginx                | 静态资源服务器      | https://www.nginx.com/                         |
-| Docker               | 应用容器引擎        | https://www.docker.com                         |
-| Jenkins              | 自动化部署工具      | https://github.com/jenkinsci/jenkins           |
-| Druid                | 数据库连接池        | https://github.com/alibaba/druid               |
-| OSS                  | 对象存储            | https://github.com/aliyun/aliyun-oss-java-sdk  |
-| MinIO                | 对象存储            | https://github.com/minio/minio                 |
-| JWT                  | JWT登录支持         | https://github.com/jwtk/jjwt                   |
-| Lombok               | Java语言增强库      | https://github.com/rzwitserloot/lombok         |
-| Hutool               | Java工具类库        | https://github.com/looly/hutool                |
-| PageHelper           | MyBatis物理分页插件 | http://git.oschina.net/free/Mybatis_PageHelper |
-| SpringDoc            | API文档生成工具      | https://github.com/springdoc/springdoc-openapi |
-| Hibernator-Validator | 验证框架            | http://hibernate.org/validator                 |
+1. **参考图**：寻找视觉上与输入图片相似的商品。
+2. **修改文本**：根据用户输入的修改要求检索商品。
+3. **目标描述**：`gemma3:12b` 结合参考图和修改文字生成目标外观描述，再进行文本检索。
 
-#### 前端技术
+候选按商品 ID 合并去重，使用加权倒数名次融合（Weighted RRF，`k=60`）：
 
-| 技术       | 说明                  | 官网                                   |
-| ---------- | --------------------- | -------------------------------------- |
-| Vue        | 前端框架              | https://vuejs.org/                     |
-| Vue-router | 路由框架              | https://router.vuejs.org/              |
-| Vuex       | 全局状态管理框架      | https://vuex.vuejs.org/                |
-| Element    | 前端UI框架            | https://element.eleme.io               |
-| Axios      | 前端HTTP框架          | https://github.com/axios/axios         |
-| v-charts   | 基于Echarts的图表框架 | https://v-charts.js.org/               |
-| Js-cookie  | cookie管理工具        | https://github.com/js-cookie/js-cookie |
-| nprogress  | 进度条控件            | https://github.com/rstacruz/nprogress  |
+```text
+融合得分 = Σ 权重 × 61 / (60 + 该路名次)
+```
 
-#### 移动端技术
+默认权重为参考图 **0.25**、修改文本 **0.15**、目标描述 **0.60**。商品未进入某一路的前 100 名时，该路贡献为 0。融合得分用于排序，不代表匹配概率。参考商品会从结果中排除。
 
-| 技术         | 说明             | 官网                                    |
-| ------------ | ---------------- | --------------------------------------- |
-| Vue          | 核心前端框架     | https://vuejs.org                       |
-| Vuex         | 全局状态管理框架 | https://vuex.vuejs.org                  |
-| uni-app      | 移动端前端框架   | https://uniapp.dcloud.io                |
-| mix-mall     | 电商项目模板     | https://ext.dcloud.net.cn/plugin?id=200 |
-| luch-request | HTTP请求框架     | https://github.com/lei-mu/luch-request  |
+## 主要组件
 
-#### 架构图
+| 路径 | 用途 |
+| --- | --- |
+| `fashioniq_retrieval/core.py` | CLIP 编码、三路检索、去重与加权 RRF |
+| `fashioniq_retrieval/vision.py` | 调用 Ollama 生成目标图片描述并解析 JSON |
+| `fashioniq_retrieval/service.py` | 提供本地 HTTP 检索接口 |
+| `mall-portal/.../FashionIqSearchController.java` | 接收搜索页请求、代理检索服务并返回商品信息 |
+| `mall-app-web/src/pages/product/search.vue` | 图文搜索页面及结果展示 |
 
-##### 系统架构图
+## 运行准备
 
-![系统架构图](./document/resource/re_mall_system_arch.jpg)
+需要 Python、可用的 FashionIQ 商品图片和商品目录、Ollama，以及 CLIP ViT-L/14 权重文件。模型权重、图片和向量索引不包含在 Git 仓库中。
 
-##### 业务架构图
+安装 Python 依赖：
 
-![业务架构图](./document/resource/re_mall_business_arch.jpg)
+```powershell
+python -m pip install -r fashioniq_retrieval/requirements.txt
+```
 
-#### 模块介绍
+启动 Ollama 并准备视觉模型：
 
-##### 后台管理系统 `mall-admin`
+```powershell
+ollama pull gemma3:12b
+```
 
-- 商品管理：[功能结构图-商品.jpg](document/resource/mind_product.jpg)
-- 订单管理：[功能结构图-订单.jpg](document/resource/mind_order.jpg)
-- 促销管理：[功能结构图-促销.jpg](document/resource/mind_sale.jpg)
-- 内容管理：[功能结构图-内容.jpg](document/resource/mind_content.jpg)
-- 用户管理：[功能结构图-用户.jpg](document/resource/mind_member.jpg)
+将 CLIP 权重放到 `fashioniq_retrieval/models/ViT-L-14.pt`。图片目录按 `dress`、`shirt`、`toptee` 分类。建索引时，程序从商品目录读取已上架商品，并匹配本地图片；默认 Docker MySQL 容器名为 `mall-mysql`，需设置 `MALL_DB_PASSWORD`：
 
-##### 前台商城系统 `mall-portal`
+```powershell
+$env:MALL_DB_PASSWORD = "你的数据库密码"
+$env:FASHIONIQ_IMAGE_ROOT = "D:\dataset\fashioniq"
+python -m fashioniq_retrieval index
+```
 
-[功能结构图-前台.jpg](document/resource/mind_portal.jpg)
+索引写入 `fashioniq_retrieval/index/`，该目录被 Git 忽略。更新商品或图片后需要重新建索引。
 
-#### 开发进度
+## 启动检索服务
 
-![项目开发进度图](./document/resource/re_mall_dev_flow.jpg)
+```powershell
+python -m fashioniq_retrieval.service --host 0.0.0.0 --port 8765
+```
 
-## 环境搭建
+通过 `GET http://localhost:8765/health` 查看服务状态、索引商品数和当前融合权重。搜索页面调用 Portal 的 `POST /product/visualSearch`；检索服务也提供 `POST /search`，接收参考图片（Base64）或参考商品 ID、修改文本、类别和结果数量。
 
-### 开发工具
+上传图片最大 5 MB，修改文本最多 500 字。服务使用 Ollama JSON 输出模式生成目标描述；默认请求超时为 180 秒。
 
-| 工具          | 说明                | 官网                                            |
-| ------------- | ------------------- | ----------------------------------------------- |
-| IDEA          | 开发IDE             | https://www.jetbrains.com/idea/download         |
-| RedisDesktop  | redis客户端连接工具 | https://github.com/qishibo/AnotherRedisDesktopManager  |
-| Robomongo     | mongo客户端连接工具 | https://robomongo.org/download                  |
-| SwitchHosts   | 本地host管理        | https://oldj.github.io/SwitchHosts/             |
-| X-shell       | Linux远程连接工具   | http://www.netsarang.com/download/software.html |
-| Navicat       | 数据库连接工具      | http://www.formysql.com/xiazai.html             |
-| PowerDesigner | 数据库设计工具      | http://powerdesigner.de/                        |
-| Axure         | 原型设计工具        | https://www.axure.com/                          |
-| MindMaster    | 思维导图设计工具    | http://www.edrawsoft.cn/mindmaster              |
-| ScreenToGif   | gif录制工具         | https://www.screentogif.com/                    |
-| ProcessOn     | 流程图绘制工具      | https://www.processon.com/                      |
-| PicPick       | 图片处理工具        | https://picpick.app/zh/                         |
-| Snipaste      | 屏幕截图工具        | https://www.snipaste.com/                       |
-| Postman       | API接口调试工具      | https://www.postman.com/                        |
-| Typora        | Markdown编辑器      | https://typora.io/                              |
+## 调整检索参数
 
-### 开发环境
+启动 Python 服务前可通过环境变量设置路由权重、每路候选数和 RRF 参数：
 
-| 工具          | 版本号 | 下载                                                         |
-| ------------- | ------ | ------------------------------------------------------------ |
-| JDK           | 17     | https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html |
-| MySQL         | 5.7    | https://www.mysql.com/                                       |
-| Redis         | 7.0    | https://redis.io/download                                    |
-| MongoDB       | 5.0    | https://www.mongodb.com/download-center                      |
-| RabbitMQ      | 3.10.5 | http://www.rabbitmq.com/download.html                        |
-| Nginx         | 1.22   | http://nginx.org/en/download.html                            |
-| Elasticsearch | 7.17.3 | https://www.elastic.co/downloads/elasticsearch               |
-| Logstash      | 7.17.3 | https://www.elastic.co/cn/downloads/logstash                 |
-| Kibana        | 7.17.3 | https://www.elastic.co/cn/downloads/kibana                   |
+```powershell
+$env:FASHIONIQ_WEIGHT_REFERENCE = "0.25"
+$env:FASHIONIQ_WEIGHT_MODIFICATION = "0.15"
+$env:FASHIONIQ_WEIGHT_TARGET = "0.60"
+$env:FASHIONIQ_BRANCH_TOP_K = "100"
+$env:FASHIONIQ_RRF_K = "60"
+```
 
-### 搭建步骤
+权重会自动归一化。也可使用 `OSRCIR_VISION_MODEL` 更换默认视觉模型。
 
-> Windows环境部署
+## CLI 示例
 
-- Windows环境搭建请参考：[mall在Windows环境下的部署](https://www.macrozheng.com/mall/deploy/mall_deploy_windows.html);
-- 注意：如果只启动`mall-admin`模块，仅需安装MySQL、Redis即可;
-- 克隆`mall-admin-web`项目，并导入到IDEA中完成编译：[前端项目地址](https://github.com/macrozheng/mall-admin-web);
-- `mall-admin-web`项目的安装及部署请参考：[mall前端项目的安装与部署](https://www.macrozheng.com/mall/deploy/mall_deploy_web.html) 。
+使用索引中的商品作为参考图：
 
-> Docker环境部署
+```powershell
+python -m fashioniq_retrieval search `
+  --reference-product-id 100000 `
+  --text "make it shorter and black" `
+  --category dress `
+  --top-k 10
+```
 
-- 使用虚拟机安装CentOS7.6请参考：[虚拟机安装及使用Linux，看这一篇就够了](https://www.macrozheng.com/tool/linux_install.html);
-- 本项目Docker镜像构建请参考：[使用Maven插件为SpringBoot应用构建Docker镜像](https://www.macrozheng.com/project/maven_docker_fabric8.html);
-- 本项目在Docker容器下的部署请参考：[mall在Linux环境下的部署（基于Docker容器）](https://www.macrozheng.com/mall/deploy/mall_deploy_docker.html);
-- 本项目使用Docker Compose请参考： [mall在Linux环境下的部署（基于Docker Compose）](https://www.macrozheng.com/mall/deploy/mall_deploy_docker_compose.html);
-- 本项目在Linux下的自动化部署请参考：[mall在Linux环境下的自动化部署（基于Jenkins）](https://www.macrozheng.com/mall/deploy/mall_deploy_jenkins.html);
-
-> 相关环境部署
-
-- ELK日志收集系统的搭建请参考：[mall项目ELK日志收集解决方案](https://www.macrozheng.com/project/mall_kibana_start.html);
-- 使用MinIO存储文件请参考：[使用MinIO实现文件存储](https://www.macrozheng.com/project/minio_console_start.html);
-- 读写分离解决方案请参考：[你还在代码里做读写分离么，试试这个中间件吧](https://www.macrozheng.com/project/gaea.html);
-- Redis集群解决方案请参考：[Docker环境下秒建Redis集群](https://www.macrozheng.com/blog/redis_cluster.html) 。
-
-## 公众号
-
-加微信群交流，关注公众号「**macrozheng**」，回复「**加群**」即可。
-
-![公众号图片](./document/resource/qrcode_for_macrozheng_258.jpg)
-
-## 许可证
-
-[Apache License 2.0](https://github.com/macrozheng/mall/blob/master/LICENSE)
-
-Copyright (c) 2018-2026 macrozheng
+也可用 `--reference-image` 指定本地参考图片。传入 `--target-description` 可直接指定目标描述；修改文本仍需提供，以保留第二路检索。
