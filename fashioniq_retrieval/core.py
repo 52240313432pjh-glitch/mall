@@ -1,6 +1,7 @@
 """FashionIQ three-route retrieval with OSCIR target text and CLIP rankings."""
 
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -9,8 +10,11 @@ from PIL import Image
 from .catalog import load_catalog
 from .vision import describe_target
 
-DEFAULT_INDEX_DIR = Path(__file__).resolve().parent / "index"
-DEFAULT_WEIGHTS = Path(__file__).resolve().parent / "models" / "ViT-L-14.pt"
+DEFAULT_INDEX_DIR = Path(__file__).resolve().parent / "index_vitg"
+DEFAULT_WEIGHTS = Path(os.environ.get(
+    "OSRCIR_CLIP_WEIGHTS",
+    r"D:\hf_cache\hub\models--laion--CLIP-ViT-g-14-laion2B-s34B-b88K\snapshots\a20bc450485fc2dd335317234582df0e69d21b5a\open_clip_model.safetensors",
+))
 DEFAULT_FUSION_WEIGHTS = {"reference": 0.25, "modification": 0.15, "target": 0.60}
 DEFAULT_BRANCH_TOP_K = 100
 DEFAULT_RRF_K = 60

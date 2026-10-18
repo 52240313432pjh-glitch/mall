@@ -2,7 +2,7 @@
 
 这是一个面向服饰商品的图文检索项目。用户提供一张参考图和一段修改描述，系统从商品图库中检索符合目标的商品。
 
-检索使用 OpenAI CLIP ViT-L/14 生成图文向量，使用 Ollama `gemma3:12b` 根据中文提示词分别生成英文检索描述和中文展示描述，再对三路候选去重和加权排序。
+检索使用 LAION OpenCLIP ViT-G/14（laion2B-s34B-b88K）生成图文向量，使用 Ollama `gemma3:12b` 根据中文提示词分别生成英文检索描述和中文展示描述，再对三路候选去重和加权排序。
 
 ## 检索流程
 
@@ -51,7 +51,7 @@ flowchart LR
 
 ## 运行准备
 
-需要 Python、可用的 FashionIQ 商品图片和商品目录、Ollama，以及 CLIP ViT-L/14 权重文件。模型权重、图片和向量索引不包含在 Git 仓库中。
+需要 Python、可用的 FashionIQ 商品图片和商品目录、Ollama，以及 LAION OpenCLIP ViT-G/14 权重文件。模型权重、图片和向量索引不包含在 Git 仓库中。
 
 安装 Python 依赖：
 
@@ -65,7 +65,7 @@ python -m pip install -r fashioniq_retrieval/requirements.txt
 ollama pull gemma3:12b
 ```
 
-将 CLIP 权重放到 `fashioniq_retrieval/models/ViT-L-14.pt`。图片目录按 `dress`、`shirt`、`toptee` 分类。建索引时，程序从商品目录读取已上架商品，并匹配本地图片；默认 Docker MySQL 容器名为 `mall-mysql`，需设置 `MALL_DB_PASSWORD`：
+默认读取 `D:\hf_cache\hub` 下的 LAION OpenCLIP ViT-G/14 `laion2B-s34B-b88K` safetensors 权重。也可通过 `OSRCIR_CLIP_WEIGHTS` 指定权重文件。图片目录按 `dress`、`shirt`、`toptee` 分类。建索引时，程序从商品目录读取已上架商品，并匹配本地图片；默认 Docker MySQL 容器名为 `mall-mysql`，需设置 `MALL_DB_PASSWORD`：
 
 ```powershell
 $env:MALL_DB_PASSWORD = "你的数据库密码"
@@ -73,7 +73,7 @@ $env:FASHIONIQ_IMAGE_ROOT = "D:\dataset\fashioniq"
 python -m fashioniq_retrieval index
 ```
 
-索引写入 `fashioniq_retrieval/index/`，该目录被 Git 忽略。更新商品或图片后需要重新建索引。
+新索引写入 `fashioniq_retrieval/index_vitg/`，该目录被 Git 忽略；原 ViT-L 索引 `fashioniq_retrieval/index/` 保留作回退。更新商品或图片后需要重新建索引。
 
 ## 启动检索服务
 

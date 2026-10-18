@@ -169,15 +169,16 @@ class QuickGELU(nn.Module):
 
 
 class ResidualAttentionBlock(nn.Module):
-    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None):
+    def __init__(self, d_model: int, n_head: int, attn_mask: torch.Tensor = None, mlp_width: int = None):
         super().__init__()
 
+        mlp_width = mlp_width or d_model * 4
         self.attn = nn.MultiheadAttention(d_model, n_head)
         self.ln_1 = LayerNorm(d_model)
         self.mlp = nn.Sequential(OrderedDict([
-            ("c_fc", nn.Linear(d_model, d_model * 4)),
+            ("c_fc", nn.Linear(d_model, mlp_width)),
             ("gelu", QuickGELU()),
-            ("c_proj", nn.Linear(d_model * 4, d_model))
+            ("c_proj", nn.Linear(mlp_width, d_model))
         ]))
         self.ln_2 = LayerNorm(d_model)
         self.attn_mask = attn_mask
@@ -193,18 +194,21 @@ class ResidualAttentionBlock(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None):
+    def __init__(self, width: int, layers: int, heads: int, attn_mask: torch.Tensor = None, mlp_width: int = None):
         super().__init__()
         self.width = width
         self.layers = layers
-        self.resblocks = nn.Sequential(*[ResidualAttentionBlock(width, heads, attn_mask) for _ in range(layers)])
+        self.resblocks = nn.Sequential(*[
+            ResidualAttentionBlock(width, heads, attn_mask, mlp_width) for _ in range(layers)
+        ])
 
     def forward(self, x: torch.Tensor):
         return self.resblocks(x)
 
 
 class VisionTransformer(nn.Module):
-    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int, output_dim: int):
+    def __init__(self, input_resolution: int, patch_size: int, width: int, layers: int, heads: int,
+                 output_dim: int, mlp_width: int = None):
         super().__init__()
         self.input_resolution = input_resolution
         self.output_dim = output_dim
@@ -215,7 +219,7 @@ class VisionTransformer(nn.Module):
         self.positional_embedding = nn.Parameter(scale * torch.randn((input_resolution // patch_size) ** 2 + 1, width))
         self.ln_pre = LayerNorm(width)
 
-        self.transformer = Transformer(width, layers, heads)
+        self.transformer = Transformer(width, layers, heads, mlp_width=mlp_width)
 
         self.ln_post = LayerNorm(width)
         self.proj = nn.Parameter(scale * torch.randn(width, output_dim))
@@ -253,7 +257,9 @@ class CLIP(nn.Module):
                  vocab_size: int,
                  transformer_width: int,
                  transformer_heads: int,
-                 transformer_layers: int
+                 transformer_layers: int,
+                 vision_heads: int = None,
+                 vision_mlp_width: int = None
                  ):
         super().__init__()
 
@@ -269,14 +275,15 @@ class CLIP(nn.Module):
                 width=vision_width
             )
         else:
-            vision_heads = vision_width // 64
+            vision_heads = vision_heads or vision_width // 64
             self.visual = VisionTransformer(
                 input_resolution=image_resolution,
                 patch_size=vision_patch_size,
                 width=vision_width,
                 layers=vision_layers,
                 heads=vision_heads,
-                output_dim=embed_dim
+                output_dim=embed_dim,
+                mlp_width=vision_mlp_width
             )
 
         self.transformer = Transformer(
@@ -396,7 +403,7 @@ def convert_weights(model: nn.Module):
     model.apply(_convert_weights_to_fp16)
 
 
-def build_model(state_dict: dict):
+def build_model(state_dict: dict, vision_heads: int = None):
     vit = "visual.proj" in state_dict
 
     if vit:
@@ -405,6 +412,12 @@ def build_model(state_dict: dict):
         vision_patch_size = state_dict["visual.conv1.weight"].shape[-1]
         grid_size = round((state_dict["visual.positional_embedding"].shape[0] - 1) ** 0.5)
         image_resolution = vision_patch_size * grid_size
+        visual_mlp_key = "visual.transformer.resblocks.0.mlp.c_fc.weight"
+        if visual_mlp_key in state_dict:
+            vision_mlp_width = state_dict[visual_mlp_key].shape[0]
+        # LAION OpenCLIP ViT-g-14 uses 16 heads of width 88.
+        if vision_heads is None and vision_width == 1408:
+            vision_heads = 16
     else:
         counts: list = [len(set(k.split(".")[2] for k in state_dict if k.startswith(f"visual.layer{b}"))) for b in [1, 2, 3, 4]]
         vision_layers = tuple(counts)
@@ -424,7 +437,9 @@ def build_model(state_dict: dict):
     model = CLIP(
         embed_dim,
         image_resolution, vision_layers, vision_width, vision_patch_size,
-        context_length, vocab_size, transformer_width, transformer_heads, transformer_layers
+        context_length, vocab_size, transformer_width, transformer_heads, transformer_layers,
+        vision_heads=vision_heads,
+        vision_mlp_width=vision_mlp_width if vit else None
     )
 
     for key in ["input_resolution", "context_length", "vocab_size"]:

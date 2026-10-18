@@ -6,3 +6,4 @@ ftfy
 regex
 tqdm
 packaging
+safetensors>=0.3

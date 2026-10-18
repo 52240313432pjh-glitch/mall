@@ -1,11 +1,11 @@
 # FashionIQ 三路图文检索
 
-商城接入参考 OSCIR 的目标描述任务，使用中文提示词和 OpenAI CLIP ViT-L/14。
+商城接入参考 OSCIR 的目标描述任务，使用中文提示词和 LAION OpenCLIP ViT-G/14（laion2B-s34B-b88K）。
 当前商城检索按三路独立召回：参考图片、修改文本、视觉模型生成的目标图片描述。
 原 FashionIQ_demo.py 评测脚本使用目标描述单路；三路去重融合是本商城按需求增加的策略。
 
 商品候选来自已导入 Mall MySQL 的 FashionIQ 图片，当前索引在
-D:/mall/fashioniq_retrieval/index。大模型权重和向量索引被 Git 忽略。
+D:/mall/fashioniq_retrieval/index_vitg。模型权重和向量索引被 Git 忽略；旧 ViT-L 索引保留在 index 目录。
 
 ## 检索过程
 
@@ -30,8 +30,9 @@ D:/mall/fashioniq_retrieval/index。大模型权重和向量索引被 Git 忽略
     cd D:/mall
     & 'D:/Anaconda3/envs/osrcir/python.exe' -m fashioniq_retrieval index
 
-默认图片目录为 D:/dataset/fashioniq，权重在
-fashioniq_retrieval/models/ViT-L-14.pt。商品或图片变化后应重新建索引并重启服务。
+默认图片目录为 D:/dataset/fashioniq，ViT-G safetensors 权重默认读取
+D:/hf_cache/hub/models--laion--CLIP-ViT-g-14-laion2B-s34B-b88K。可设置 OSRCIR_CLIP_WEIGHTS 指定其他权重。
+商品或图片变化后应重新建索引并重启服务。
 
 ## 启动服务
 
