@@ -2,7 +2,7 @@
 
 这是一个面向服饰商品的图文检索项目。用户提供一张参考图和一段修改描述，系统从商品图库中检索符合目标的商品。
 
-检索使用 OpenAI CLIP ViT-L/14 生成图文向量，使用 Ollama `gemma3:12b` 根据参考图和修改描述生成目标图片描述，再对三路候选去重和加权排序。
+检索使用 OpenAI CLIP ViT-L/14 生成图文向量，使用 Ollama `gemma3:12b` 根据中文提示词生成英文目标图片描述，再对三路候选去重和加权排序。
 
 ## 检索流程
 
@@ -44,7 +44,7 @@ flowchart LR
 | 路径 | 用途 |
 | --- | --- |
 | `fashioniq_retrieval/core.py` | CLIP 编码、三路检索、去重与加权 RRF |
-| `fashioniq_retrieval/vision.py` | 调用 Ollama 生成目标图片描述并解析 JSON |
+| `fashioniq_retrieval/vision.py` | 使用中文提示词调用 Ollama 并解析目标图片描述 |
 | `fashioniq_retrieval/service.py` | 提供本地 HTTP 检索接口 |
 | `mall-portal/.../FashionIqSearchController.java` | 接收搜索页请求、代理检索服务并返回商品信息 |
 | `mall-app-web/src/pages/product/search.vue` | 图文搜索页面及结果展示 |

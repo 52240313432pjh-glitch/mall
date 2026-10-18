@@ -1,4 +1,4 @@
-"""OSCIR's image-plus-modification target description step."""
+"""Generate a target-image description with a Chinese vision prompt."""
 
 import base64
 import json
@@ -8,7 +8,7 @@ from urllib import request
 
 from PIL import Image
 
-from .prompts import mllm_structural_predictor_prompt_CoT
+from .prompts import target_description_prompt_zh
 
 
 def parse_target_description(content):
@@ -36,7 +36,8 @@ def parse_target_description(content):
     for payload in candidates:
         if not isinstance(payload, dict):
             continue
-        description = payload.get("Target Image Description") or payload.get("Final Query")
+        description = (payload.get("目标图片描述") or payload.get("目标图像描述")
+                       or payload.get("Target Image Description") or payload.get("Final Query"))
         if isinstance(description, str) and description.strip():
             return description.strip()
     if not candidates:
@@ -57,9 +58,8 @@ def _post_json(endpoint, payload, api_key=None, timeout=180):
 def describe_target(reference_image, modification, provider="ollama", model=None, endpoint=None):
     """Turn a reference image and a FashionIQ modification into target text.
 
-    The prompt comes from OSCIR src/prompts.py. The local Ollama and
-    OpenAI-compatible transports replace the source project's provider code,
-    which contains machine-specific settings.
+    The Chinese prompt follows OSCIR's reference-image plus modification
+    task. Local Ollama and OpenAI-compatible transports are supported.
     """
     image_path = Path(reference_image)
     if not image_path.is_file():
@@ -70,10 +70,8 @@ def describe_target(reference_image, modification, provider="ollama", model=None
         mime = {"PNG": "image/png", "WEBP": "image/webp"}.get(image.format, "image/jpeg")
     image_base64 = base64.b64encode(image_path.read_bytes()).decode("ascii")
     user_text = (
-        "<Input>\n"
-        "Original Image: <attached image>\n"
-        "Manipulation text: " + modification.strip() + "\n"
-        "</Input>"
+        "参考图片：见随附图片。\n"
+        "修改描述：" + modification.strip()
     )
     if provider == "ollama":
         endpoint = endpoint or os.environ.get("OLLAMA_API_URL", "http://localhost:11434/api/chat")
@@ -83,7 +81,7 @@ def describe_target(reference_image, modification, provider="ollama", model=None
             "stream": False,
             "format": "json",
             "messages": [
-                {"role": "system", "content": mllm_structural_predictor_prompt_CoT},
+                {"role": "system", "content": target_description_prompt_zh},
                 {"role": "user", "content": user_text, "images": [image_base64]},
             ],
             "options": {"temperature": 0},
@@ -100,7 +98,7 @@ def describe_target(reference_image, modification, provider="ollama", model=None
             "model": model,
             "temperature": 0,
             "messages": [
-                {"role": "system", "content": mllm_structural_predictor_prompt_CoT},
+                {"role": "system", "content": target_description_prompt_zh},
                 {"role": "user", "content": [
                     {"type": "text", "text": user_text},
                     {"type": "image_url", "image_url": {
