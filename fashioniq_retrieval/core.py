@@ -232,7 +232,7 @@ class FashionIQRetriever:
         target_description=None, category=None, top_k=10, exclude_reference=True,
         provider="ollama", vision_model=None, vision_endpoint=None,
         mode="fusion", fusion_weights=None, branch_top_k=DEFAULT_BRANCH_TOP_K,
-        rrf_k=DEFAULT_RRF_K
+        rrf_k=DEFAULT_RRF_K, target_description_zh=None
     ):
         if reference_product_id is not None:
             reference = self.by_product_id.get(int(reference_product_id))
@@ -255,10 +255,16 @@ class FashionIQRetriever:
         weights = normalize_fusion_weights(fusion_weights)
         reference_vector = self.encode_image(reference_image)
         text_vector = self.encode_texts([modification.strip()])[0]
-        description = target_description or describe_target(
-            reference_image, modification, provider, vision_model, vision_endpoint
-        )
-        target_vector = self.encode_texts([description])[0]
+        if target_description:
+            retrieval_description = target_description
+            display_description = target_description_zh or target_description
+        else:
+            descriptions = describe_target(
+                reference_image, modification, provider, vision_model, vision_endpoint
+            )
+            retrieval_description = descriptions["en"]
+            display_description = descriptions["zh"]
+        target_vector = self.encode_texts([retrieval_description])[0]
 
         # Exclude a known reference product, or an uploaded image that is an
         # exact match for an indexed product, from all three candidate lists.
@@ -282,7 +288,8 @@ class FashionIQRetriever:
         return {
             "reference_image": str(reference_image),
             "modification": modification,
-            "target_description": description,
+            "target_description": retrieval_description,
+            "target_description_zh": display_description,
             "mode": "fusion",
             "category": category,
             "fusion_method": "weighted_rrf",

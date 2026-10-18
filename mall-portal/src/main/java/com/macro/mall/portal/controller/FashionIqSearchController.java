@@ -129,8 +129,8 @@ public class FashionIqSearchController {
             }
             Map<String, Object> data = new LinkedHashMap<>();
             data.put("mode", payload.path("mode").asText(mode));
-            data.put("targetDescription", payload.path("target_description").isNull()
-                    ? null : payload.path("target_description").asText());
+            data.put("targetDescription", payload.path("target_description_zh").isNull()
+                    ? null : payload.path("target_description_zh").asText());
             data.put("fusionMethod", payload.path("fusion_method").asText());
             data.put("fusionWeights", objectMapper.convertValue(
                     payload.path("fusion_weights"), Map.class));

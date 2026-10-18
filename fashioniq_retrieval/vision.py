@@ -11,8 +11,8 @@ from PIL import Image
 from .prompts import target_description_prompt_zh
 
 
-def parse_target_description(content):
-    """Read the target sentence from JSON, including JSON wrapped in prose or Markdown."""
+def parse_target_descriptions(content):
+    """Read English retrieval and Chinese display descriptions from model JSON."""
     if not isinstance(content, str) or not content.strip():
         raise ValueError("Vision model returned an empty response")
     content = content.strip()
@@ -36,13 +36,13 @@ def parse_target_description(content):
     for payload in candidates:
         if not isinstance(payload, dict):
             continue
-        description = (payload.get("目标图片描述") or payload.get("目标图像描述")
-                       or payload.get("Target Image Description") or payload.get("Final Query"))
-        if isinstance(description, str) and description.strip():
-            return description.strip()
+        english = payload.get("target_description_en") or payload.get("目标描述_检索")
+        chinese = payload.get("target_description_zh") or payload.get("目标描述_展示")
+        if isinstance(english, str) and english.strip() and isinstance(chinese, str) and chinese.strip():
+            return {"en": english.strip(), "zh": chinese.strip()}
     if not candidates:
         raise ValueError("Vision model did not return a parseable JSON object")
-    raise ValueError("Vision model response has no target image description")
+    raise ValueError("Vision model response must include English retrieval and Chinese display descriptions")
 
 
 def _post_json(endpoint, payload, api_key=None, timeout=180):
@@ -111,4 +111,4 @@ def describe_target(reference_image, modification, provider="ollama", model=None
         content = response["choices"][0]["message"]["content"]
     else:
         raise ValueError("provider must be ollama or openai")
-    return parse_target_description(content)
+    return parse_target_descriptions(content)
