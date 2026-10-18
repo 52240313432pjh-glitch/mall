@@ -16,7 +16,7 @@ def parser():
     index.add_argument("--index-dir", default=str(DEFAULT_INDEX_DIR))
     index.add_argument("--weights", default=os.environ.get("OSRCIR_CLIP_WEIGHTS", str(DEFAULT_WEIGHTS)))
     index.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
-    index.add_argument("--batch-size", type=int, default=16)
+    index.add_argument("--batch-size", type=int, default=2)
     index.add_argument("--catalog-file", help="Optional JSON array with id and pic fields")
     index.add_argument("--mysql-container", default="mall-mysql")
 

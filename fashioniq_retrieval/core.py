@@ -54,7 +54,7 @@ def _encode_images(model, tensors, device):
 
 def build_index(
     image_root, index_dir=DEFAULT_INDEX_DIR, weights=str(DEFAULT_WEIGHTS),
-    batch_size=16, device="auto", catalog_file=None, mysql_container="mall-mysql"
+    batch_size=2, device="auto", catalog_file=None, mysql_container="mall-mysql"
 ):
     """Index only FashionIQ images whose products are published in mall MySQL."""
     if batch_size < 1:

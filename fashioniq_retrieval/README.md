@@ -32,7 +32,7 @@ D:/mall/fashioniq_retrieval/index_vitg。模型权重和向量索引被 Git 忽�
 
 默认图片目录为 D:/dataset/fashioniq，ViT-G safetensors 权重默认读取
 D:/hf_cache/hub/models--laion--CLIP-ViT-g-14-laion2B-s34B-b88K。可设置 OSRCIR_CLIP_WEIGHTS 指定其他权重。
-商品或图片变化后应重新建索引并重启服务。
+商品或图片变化后应重新建索引并重启服务。ViT-G 建索引默认按 2 张一批计算，可用 --batch-size 调整。
 
 ## 启动服务
 
